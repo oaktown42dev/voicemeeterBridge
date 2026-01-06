@@ -1,0 +1,119 @@
+[
+    {
+        "id": "vm_universal_flow_v3",
+        "type": "tab",
+        "label": "Voicemeeter Final Control",
+        "disabled": false,
+        "info": "Optimierter Flow mit Initial-Sync"
+    },
+    {
+        "id": "vm_ws_in",
+        "type": "websocket in",
+        "z": "vm_universal_flow_v3",
+        "name": "From VM Server",
+        "server": "",
+        "client": "ws_client_config_final",
+        "x": 120,
+        "y": 120,
+        "wires": [
+            [
+                "json_parse_uni"
+            ]
+        ]
+    },
+    {
+        "id": "json_parse_uni",
+        "type": "json",
+        "z": "vm_universal_flow_v3",
+        "name": "Parse JSON",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 310,
+        "y": 120,
+        "wires": [
+            [
+                "fader_instanz_0"
+            ]
+        ]
+    },
+    {
+        "id": "fader_instanz_0",
+        "type": "ui_template",
+        "z": "vm_universal_flow_v3",
+        "group": "81b06fec345ce7f5",
+        "name": "Universal Fader",
+        "order": 1,
+        "width": 3,
+        "height": 7,
+        "format": "<div style=\"background:#111; padding:10px; border-radius:5px; color:#eee; text-align:center;\">\n    <h4 style=\"margin:0\">{{label}}</h4>\n    <div style=\"height:200px; display:flex; justify-content:center; align-items:flex-end; gap:12px; margin:15px 0;\">\n        <div style=\"height:100%; width:30px; display:flex; justify-content:center;\">\n            <input type=\"range\" min=\"-60\" max=\"12\" step=\"0.1\" \n                   ng-model=\"val\" ng-change=\"sendCmd('Gain', val)\" \n                   ng-disabled=\"val === undefined\"\n                   style=\"appearance: slider-vertical; -webkit-appearance: slider-vertical; width:10px; height:100%;\">\n        </div>\n        <div style=\"width:10px; height:100%; background:#000; position:relative; border-radius:2px; overflow:hidden;\">\n            <div ng-style=\"{'height': audioLevel + '%', 'background': audioLevel > 90 ? 'red' : 'green'}\" \n                 style=\"width:100%; position:absolute; bottom:0; transition: height 0.1s;\"></div>\n        </div>\n    </div>\n    <div style=\"font-family:monospace; margin-bottom:10px;\">{{val !== undefined ? (val | number:1) : '---'}} dB</div>\n    <button ng-click=\"sendCmd('Mute', muted ? 0 : 1)\" \n            ng-disabled=\"val === undefined\"\n            style=\"width:100%; background:{{muted ? 'red' : '#444'}}; border:none; color:white; padding:8px; cursor:pointer;\">\n        {{val === undefined ? 'LÄDT...' : (muted ? 'MUTED' : 'MUTE')}}\n    </button>\n</div>\n\n<script>\n(function(scope) {\n    // --- KONFIGURATION ---\n    scope.type = \"Strip\"; \n    scope.index = 0;      \n    scope.label = \"Kanal 1\";\n    // ---------------------\n\n    scope.val = undefined;\n    scope.muted = false;\n    scope.audioLevel = 0;\n    let initialized = false;\n\n    scope.sendCmd = function(p, v) {\n        if (!initialized || v === undefined) return;\n        scope.send({payload: { \n            command: \"set\" + scope.type + p, \n            [scope.type.toLowerCase()]: scope.index, \n            value: parseFloat(v)\n        }});\n    };\n\n    scope.$watch('msg', function(msg) {\n        if (!msg || !msg.payload) return;\n        const target = scope.type + '[' + scope.index + ']';\n\n        if (msg.payload.type === 'welcome' && msg.payload.current_state) {\n            const remoteVal = msg.payload.current_state[target + \".Gain\"];\n            const remoteMute = msg.payload.current_state[target + \".Mute\"];\n            if (remoteVal !== undefined) {\n                scope.val = Math.round(remoteVal * 10) / 10;\n                scope.muted = !!remoteMute;\n                initialized = true;\n            }\n        }\n\n        if (msg.payload.type === 'parameter_update') {\n            msg.payload.changes.forEach(c => {\n                if (c.parameter === target + \".Gain\") {\n                    scope.val = Math.round(c.value * 10) / 10;\n                    initialized = true; \n                }\n                if (c.parameter === target + \".Mute\") scope.muted = !!c.value;\n            });\n        }\n\n        if (msg.payload.type === 'level_update' && scope.type === 'Strip') {\n            let raw = msg.payload.levels[scope.index * 2];\n            scope.audioLevel = Math.max(0, (raw + 60) * 1.66);\n        }\n    });\n})(scope);\n</script>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "className": "",
+        "x": 510,
+        "y": 120,
+        "wires": [
+            [
+                "json_stringify_uni"
+            ]
+        ]
+    },
+    {
+        "id": "json_stringify_uni",
+        "type": "json",
+        "z": "vm_universal_flow_v3",
+        "name": "To JSON",
+        "property": "payload",
+        "action": "str",
+        "pretty": false,
+        "x": 690,
+        "y": 120,
+        "wires": [
+            [
+                "vm_ws_out"
+            ]
+        ]
+    },
+    {
+        "id": "vm_ws_out",
+        "type": "websocket out",
+        "z": "vm_universal_flow_v3",
+        "name": "To VM Server",
+        "server": "",
+        "client": "ws_client_config_final",
+        "x": 860,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "ws_client_config_final",
+        "type": "websocket-client",
+        "path": "ws://10.10.10.119:9014",
+        "tls": "",
+        "wholemsg": "false",
+        "hb": "0",
+        "subprotocol": "",
+        "headers": []
+    },
+    {
+        "id": "81b06fec345ce7f5",
+        "type": "ui_group",
+        "name": "Standard",
+        "tab": "447ce9b9e2e168ad",
+        "order": 1,
+        "disp": true,
+        "width": 6,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "447ce9b9e2e168ad",
+        "type": "ui_tab",
+        "name": "Home",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    }
+]

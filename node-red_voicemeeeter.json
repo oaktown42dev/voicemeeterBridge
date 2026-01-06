@@ -1,0 +1,460 @@
+[
+    {
+        "id": "a03be8365ffa1ffd",
+        "type": "group",
+        "z": "624ab42bda55e5d9",
+        "name": "Voicemeeter Steuerung",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "c8176fcab8d61f99",
+            "eb910993b3daeddc",
+            "47eace0ad3edb016",
+            "d9b2bbe9a54a0fed",
+            "7c8915ef9b1d194d",
+            "f9bd99d6906922e8",
+            "b870552b058d1d16",
+            "df66073822b77050",
+            "a8c379ddfd7fdb1b",
+            "64b6d7a20a434500",
+            "931ddf622eff7a40",
+            "7336acf2c219e125",
+            "2c0fd9f27544932e",
+            "10295b5aed9aa77d",
+            "c78ffe1808a50c92",
+            "f952ebdca99c9778",
+            "be0b744f62892180",
+            "44e09f290863e83a"
+        ],
+        "x": 214,
+        "y": 639,
+        "w": 1472,
+        "h": 442
+    },
+    {
+        "id": "c8176fcab8d61f99",
+        "type": "websocket out",
+        "z": "624ab42bda55e5d9",
+        "g": "a03be8365ffa1ffd",
+        "name": "To VM Bridge",
+        "server": "",
+        "client": "722a63c3ec7f1d7b",
+        "x": 1580,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "eb910993b3daeddc",
+        "type": "websocket in",
+        "z": "624ab42bda55e5d9",
+        "g": "a03be8365ffa1ffd",
+        "name": "From VM Bridge",
+        "server": "",
+        "client": "722a63c3ec7f1d7b",
+        "x": 320,
+        "y": 740,
+        "wires": [
+            [
+                "10295b5aed9aa77d"
+            ]
+        ]
+    },
+    {
+        "id": "47eace0ad3edb016",
+        "type": "debug",
+        "z": "624ab42bda55e5d9",
+        "g": "a03be8365ffa1ffd",
+        "name": "WS Response",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1020,
+        "y": 740,
+        "wires": []
+    },
+    {
+        "id": "d9b2bbe9a54a0fed",
+        "type": "function",
+        "z": "624ab42bda55e5d9",
+        "g": "a03be8365ffa1ffd",
+        "name": "Distribute to Faders",
+        "func": "// Empf\u00e4ngt topic: \"update_gain_5\"\nif (!msg.topic) return null;\n\nconst parts = msg.topic.split('_');\nif (parts.length < 3) return null;\n\nconst strip = parseInt(parts[2]);\n\n// Konfiguration: Welcher Voicemeeter-Strip geht zu welchem Ausgang?\n// WICHTIG: Die Reihenfolge muss zur Verkabelung passen!\n// Ausgang 0 -> AIRMEDIA (Strip 6)\n// Ausgang 1 -> LED (Strip 7)\n// Ausgang 2 -> TEAMS (Strip 5)\nconst stripMap = {\n    6: 0, // Strip 6 geht zu Ausgang 0\n    7: 1, // Strip 7 geht zu Ausgang 1\n    5: 2  // Strip 5 geht zu Ausgang 2\n};\n\nconst outputIndex = stripMap[strip];\n\nif (outputIndex !== undefined) {\n    const outputs = Array(3).fill(null);\n    // Clone message to force Angular digest update\n    outputs[outputIndex] = { ...msg, _msgid: msg._msgid + '_' + Math.random() }; \n    return outputs;\n}\n\nreturn null;",
+        "outputs": 3,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 810,
+        "y": 840,
+        "wires": [
+            [
+                "7c8915ef9b1d194d",
+                "2c0fd9f27544932e"
+            ],
+            [
+                "f9bd99d6906922e8"
+            ],
+            [
+                "b870552b058d1d16"
+            ]
+        ]
+    },
+    {
+        "id": "7c8915ef9b1d194d",
+        "type": "ui_template",
+        "z": "624ab42bda55e5d9",
+        "g": "a03be8365ffa1ffd",
+        "group": "072397c351e37a35",
+        "name": "AIRMEDIA",
+        "order": 1,
+        "width": 4,
+        "height": 12,
+        "format": "<!DOCTYPE html>\n<html lang=\"de\">\n\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Pro Audio Fader</title>\n</head>\n\n<body>\n    <div class=\"pro-audio-fader\" id=\"fader-{{$id}}\">\n        <style>\n            .pro-audio-fader {\n                background: #1e1e1e;\n                border: 2px solid #333;\n                border-radius: 8px;\n                padding: 15px;\n                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);\n                touch-action: none;\n                -webkit-user-select: none;\n                -moz-user-select: none;\n                -ms-user-select: none;\n                user-select: none;\n            }\n\n            .channel-header {\n                display: flex;\n                justify-content: space-between;\n                align-items: center;\n                margin-bottom: 15px;\n            }\n\n            .channel-label {\n                color: #fff;\n                font-size: 18px;\n                font-weight: bold;\n            }\n\n            .value-display {\n                background: #000;\n                color: #0f0;\n                text-align: center;\n                padding: 8px;\n                font-family: 'Courier New', monospace;\n                font-size: 20px;\n                margin: 10px 0;\n                border: 2px solid #333;\n                border-radius: 4px;\n            }\n\n            .fader-section {\n                display: flex;\n                justify-content: center;\n                align-items: flex-start;\n                margin: 20px 0;\n                height: 300px;\n                position: relative;\n            }\n\n            .vu-meter {\n                width: 20px;\n                height: 100%;\n                background: #000;\n                border: 1px solid #444;\n                position: relative;\n                margin-right: 15px;\n                overflow: hidden;\n            }\n\n            .vu-gradient {\n                position: absolute;\n                bottom: 0;\n                width: 100%;\n                height: 100%;\n                background: linear-gradient(to top,\n                        #00ff00 0%,\n                        #00ff00 60%,\n                        #ffff00 80%,\n                        #ff8800 90%,\n                        #ff0000 100%);\n                transition: transform 0.1s;\n            }\n\n            .fader-container {\n                position: relative;\n                width: 60px;\n                height: 100%;\n                padding: 0 20px;\n                margin: 0 -20px;\n            }\n\n            .fader-track {\n                position: absolute;\n                left: 50%;\n                transform: translateX(-50%);\n                width: 10px;\n                height: 100%;\n                background: linear-gradient(to bottom, #222, #000);\n                box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);\n                border-radius: 5px;\n            }\n\n            .fader-scale {\n                position: absolute;\n                left: -25px;\n                height: 100%;\n                width: 20px;\n                font-size: 10px;\n                color: #888;\n            }\n\n            .scale-mark {\n                position: absolute;\n                right: 0;\n                transform: translateY(-50%);\n            }\n\n            .fader-handle {\n                position: absolute;\n                width: 50px;\n                height: 40px;\n                left: 50%;\n                transform: translateX(-50%);\n                background: linear-gradient(to bottom, #888, #444);\n                border: 2px solid #222;\n                border-radius: 4px;\n                cursor: grab;\n                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);\n                touch-action: none;\n            }\n\n            .fader-handle:active,\n            .fader-handle.dragging {\n                cursor: grabbing;\n                background: linear-gradient(to bottom, #999, #555);\n            }\n\n            .fader-handle::after {\n                content: '';\n                position: absolute;\n                top: 50%;\n                left: 50%;\n                transform: translate(-50%, -50%);\n                width: 70%;\n                height: 3px;\n                background: #aaa;\n                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);\n            }\n\n            .control-buttons {\n                display: grid;\n                grid-template-columns: 1fr 1fr;\n                gap: 10px;\n                margin-top: 20px;\n            }\n\n            .ctrl-btn {\n                padding: 12px;\n                border: 2px solid #444;\n                background: linear-gradient(to bottom, #3a3a3a, #2a2a2a);\n                color: #ccc;\n                cursor: pointer;\n                font-size: 14px;\n                font-weight: bold;\n                border-radius: 4px;\n                transition: all 0.2s;\n                text-transform: uppercase;\n                touch-action: manipulation;\n                -webkit-tap-highlight-color: transparent;\n            }\n\n            .ctrl-btn:hover {\n                background: linear-gradient(to bottom, #4a4a4a, #3a3a4a);\n                border-color: #666;\n            }\n\n            .ctrl-btn:active {\n                transform: translateY(1px);\n            }\n\n            .ctrl-btn.mute.active {\n                background: linear-gradient(to bottom, #ff0000, #aa0000);\n                border-color: #ff0000;\n                color: #fff;\n                box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);\n            }\n\n            .ctrl-btn.solo.active {\n                background: linear-gradient(to bottom, #ffaa00, #aa7700);\n                border-color: #ffaa00;\n                color: #fff;\n                box-shadow: 0 0 10px rgba(255, 170, 0, 0.5);\n            }\n        </style>\n\n        <div class=\"channel-header\">\n            <div class=\"channel-label\">AIRMEDIA</div>\n        </div>\n\n        <div class=\"value-display\">{{displayValue}} dB</div>\n\n        <div class=\"fader-section\">\n            <div class=\"vu-meter\">\n                <div class=\"vu-gradient\" ng-style=\"{'transform': 'translateY(' + (100 - audioLevel) + '%)'}\"></div>\n            </div>\n\n            <div class=\"fader-container\">\n                <div class=\"fader-scale\">\n                    <div class=\"scale-mark\" style=\"top: 0%\">+12</div>\n                    <div class=\"scale-mark\" style=\"top: 10%\">+6</div>\n                    <div class=\"scale-mark\" style=\"top: 25%\">0</div>\n                    <div class=\"scale-mark\" style=\"top: 40%\">-6</div>\n                    <div class=\"scale-mark\" style=\"top: 55%\">-12</div>\n                    <div class=\"scale-mark\" style=\"top: 70%\">-24</div>\n                    <div class=\"scale-mark\" style=\"top: 85%\">-36</div>\n                    <div class=\"scale-mark\" style=\"top: 100%\">-60</div>\n                </div>\n                <div class=\"fader-track\"></div>\n                <div class=\"fader-handle\" ng-style=\"{'top': faderPosition + 'px'}\">\n                </div>\n            </div>\n        </div>\n\n        <div class=\"control-buttons\">\n            <button class=\"ctrl-btn mute\" ng-class=\"{'active': muted}\" ng-click=\"toggleMute()\">\n                MUTE\n            </button>\n            <button class=\"ctrl-btn solo\" ng-class=\"{'active': solo}\" ng-click=\"toggleSolo()\">\n                SOLO\n            </button>\n        </div>\n    </div>\n\n<script>\n    (function(scope) { console.log(\"Template Init: \" + scope.vm_strip);\n        // =================================================================\n        // HIER DIE ECHTE VOICEMEETER STRIP-NUMMER F\u00dcR JEDEN FADER ANPASSEN\n        // =================================================================\n        // F\u00fcr AIRMEDIA: scope.vm_strip = 6;\n        // F\u00fcr LED:      scope.vm_strip = 7;\n        // F\u00fcr TEAMS:    scope.vm_strip = 5;\n        //\n        scope.vm_strip = 6; // <-- DIESE ZEILE ANPASSEN!\n        // =================================================================\n\n        scope.displayValue = \"+12\";\n        scope.faderPosition = 0;\n        scope.audioLevel = 0;\n        scope.muted = false;\n        scope.solo = false;\n\n        var isDragging = false;\n        var minDb = -60;\n        var maxDb = 12;\n        var trackHeight = 300;\n        var handleHeight = 40;\n        var maxPosition = trackHeight - handleHeight;\n        var sendTimer = null; // Timer f\u00fcr die Drosselung\n\n        function dbToPosition(db) {\n            var normalized = (db - minDb) / (maxDb - minDb);\n            return (1 - normalized) * maxPosition;\n        }\n\n        function positionToDb(pos) {\n            var normalized = 1 - (pos / maxPosition);\n            return normalized * (maxDb - minDb) + minDb;\n        }\n\n        function updateDisplay(db) { console.log(\"updateDisplay:\", db, \"Strip:\", scope.vm_strip);\n            var currentDb = Math.round(db * 2) / 2;\n            scope.displayValue = currentDb >= 0 ? \"+\" + currentDb : currentDb.toString();\n            scope.faderPosition = dbToPosition(currentDb);\n        }\n\n        function startDrag(event) {\n            isDragging = true;\n            event.preventDefault();\n            document.body.style.cursor = 'grabbing';\n            var handle = event.currentTarget || event.target;\n            handle.classList.add('dragging');\n            var container = document.querySelector('#fader-' + scope.$id + ' .fader-container');\n            var rect = container.getBoundingClientRect();\n\n            function handleMove(e) {\n                if (!isDragging) return;\n                var clientY = (e.touches) ? e.touches[0].clientY : e.clientY;\n                var y = clientY - rect.top - (handleHeight / 2);\n                y = Math.max(0, Math.min(maxPosition, y));\n                \n                var currentDb = positionToDb(y);\n                updateDisplay(currentDb); // UI-Anzeige sofort aktualisieren\n                \n                // Digest-Cycle nur ansto\u00dfen, wenn n\u00f6tig, um Fehler zu vermeiden\n                if(!scope.$$phase) {\n                    scope.$apply();\n                }\n\n                // NACHRICHTEN DROSSELN\n                clearTimeout(sendTimer); // Alten Timer l\u00f6schen\n                sendTimer = setTimeout(function() {\n                    scope.send({\n                        payload: Math.round(currentDb * 2) / 2,\n                        topic: \"strip_gain_\" + scope.vm_strip\n                    });\n                }, 60); // Nachricht nur alle 60ms senden\n            }\n\n            function stopDrag(e) {\n                isDragging = false;\n                document.body.style.cursor = 'default';\n                handle.classList.remove('dragging');\n                document.removeEventListener('mousemove', handleMove);\n                document.removeEventListener('mouseup', stopDrag);\n                document.removeEventListener('touchmove', handleMove);\n                document.removeEventListener('touchend', stopDrag);\n                \n                // Sende den allerletzten Wert sofort beim Loslassen\n                clearTimeout(sendTimer);\n                var finalDb = positionToDb(scope.faderPosition);\n                scope.send({\n                    payload: Math.round(finalDb * 2) / 2,\n                    topic: \"strip_gain_\" + scope.vm_strip\n                });\n            }\n\n            document.addEventListener('mousemove', handleMove);\n            document.addEventListener('mouseup', stopDrag);\n            document.addEventListener('touchmove', handleMove, { passive: false });\n            document.addEventListener('touchend', stopDrag, { passive: false });\n        }\n\n        scope.$watch('$id', function() {\n            setTimeout(function() {\n                var handle = document.querySelector('#fader-' + scope.$id + ' .fader-handle');\n                if (handle) {\n                    handle.removeEventListener('mousedown', startDrag);\n                    handle.removeEventListener('touchstart', startDrag);\n                    handle.addEventListener('mousedown', startDrag, { passive: false });\n                    handle.addEventListener('touchstart', startDrag, { passive: false });\n                }\n            }, 100);\n        });\n\n        scope.toggleMute = function() {\n            scope.muted = !scope.muted;\n            scope.send({ payload: scope.muted, topic: \"strip_mute_\" + scope.vm_strip });\n        };\n        scope.toggleSolo = function() {\n            scope.solo = !scope.solo;\n            scope.send({ payload: scope.solo, topic: \"strip_solo_\" + scope.vm_strip });\n        };\n\n        scope.$watch('msg', function(msg) { console.log('UI Msg:', msg, 'Strip:', scope.vm_strip);\n            if (!msg || !msg.topic) return;\n            if (isDragging) return; // Updates w\u00e4hrend des Ziehens ignorieren\n\n            var parts = msg.topic.split('_');\n            if (parts.length < 3) return;\n\n            var type = parts[1];\n            var strip = parseInt(parts[2]);\n\n            console.log('Check:', strip, '===', scope.vm_strip); if (strip === scope.vm_strip) {\n                var changed = true;\n                if (type === 'gain')      { console.log('Gain Branch Entered', msg.payload); updateDisplay(msg.payload); }\n                else if (type === 'mute') { scope.muted = msg.payload; }\n                else if (type === 'solo') { scope.solo = msg.payload; }\n                else if (type === 'level'){ scope.audioLevel = Math.max(0, Math.min(100, (msg.payload + 60) * 1.66)); }\n                else { changed = false; }\n\n                if (changed && !scope.$$phase) {\n                    scope.$apply();\n                }\n            }\n        });\n        \n\n\n    })(scope);\n</script>\n</body>\n\n</html>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 1230,
+        "y": 780,
+        "wires": [
+            [
+                "df66073822b77050",
+                "f952ebdca99c9778"
+            ]
+        ]
+    },
+    {
+        "id": "f9bd99d6906922e8",
+        "type": "ui_template",
+        "z": "624ab42bda55e5d9",
+        "g": "a03be8365ffa1ffd",
+        "group": "072397c351e37a35",
+        "name": "LED",
+        "order": 2,
+        "width": 4,
+        "height": 12,
+        "format": "<!DOCTYPE html>\n<html lang=\"de\">\n\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Pro Audio Fader</title>\n</head>\n\n<body>\n    <div class=\"pro-audio-fader\" id=\"fader-{{$id}}\">\n        <style>\n            .pro-audio-fader {\n                background: #1e1e1e;\n                border: 2px solid #333;\n                border-radius: 8px;\n                padding: 15px;\n                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);\n                touch-action: none;\n                -webkit-user-select: none;\n                -moz-user-select: none;\n                -ms-user-select: none;\n                user-select: none;\n            }\n\n            .channel-header {\n                display: flex;\n                justify-content: space-between;\n                align-items: center;\n                margin-bottom: 15px;\n            }\n\n            .channel-label {\n                color: #fff;\n                font-size: 18px;\n                font-weight: bold;\n            }\n\n            .value-display {\n                background: #000;\n                color: #0f0;\n                text-align: center;\n                padding: 8px;\n                font-family: 'Courier New', monospace;\n                font-size: 20px;\n                margin: 10px 0;\n                border: 2px solid #333;\n                border-radius: 4px;\n            }\n\n            .fader-section {\n                display: flex;\n                justify-content: center;\n                align-items: flex-start;\n                margin: 20px 0;\n                height: 300px;\n                position: relative;\n            }\n\n            .vu-meter {\n                width: 20px;\n                height: 100%;\n                background: #000;\n                border: 1px solid #444;\n                position: relative;\n                margin-right: 15px;\n                overflow: hidden;\n            }\n\n            .vu-gradient {\n                position: absolute;\n                bottom: 0;\n                width: 100%;\n                height: 100%;\n                background: linear-gradient(to top,\n                        #00ff00 0%,\n                        #00ff00 60%,\n                        #ffff00 80%,\n                        #ff8800 90%,\n                        #ff0000 100%);\n                transition: transform 0.1s;\n            }\n\n            .fader-container {\n                position: relative;\n                width: 60px;\n                height: 100%;\n                padding: 0 20px;\n                margin: 0 -20px;\n            }\n\n            .fader-track {\n                position: absolute;\n                left: 50%;\n                transform: translateX(-50%);\n                width: 10px;\n                height: 100%;\n                background: linear-gradient(to bottom, #222, #000);\n                box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);\n                border-radius: 5px;\n            }\n\n            .fader-scale {\n                position: absolute;\n                left: -25px;\n                height: 100%;\n                width: 20px;\n                font-size: 10px;\n                color: #888;\n            }\n\n            .scale-mark {\n                position: absolute;\n                right: 0;\n                transform: translateY(-50%);\n            }\n\n            .fader-handle {\n                position: absolute;\n                width: 50px;\n                height: 40px;\n                left: 50%;\n                transform: translateX(-50%);\n                background: linear-gradient(to bottom, #888, #444);\n                border: 2px solid #222;\n                border-radius: 4px;\n                cursor: grab;\n                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);\n                touch-action: none;\n            }\n\n            .fader-handle:active,\n            .fader-handle.dragging {\n                cursor: grabbing;\n                background: linear-gradient(to bottom, #999, #555);\n            }\n\n            .fader-handle::after {\n                content: '';\n                position: absolute;\n                top: 50%;\n                left: 50%;\n                transform: translate(-50%, -50%);\n                width: 70%;\n                height: 3px;\n                background: #aaa;\n                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);\n            }\n\n            .control-buttons {\n                display: grid;\n                grid-template-columns: 1fr 1fr;\n                gap: 10px;\n                margin-top: 20px;\n            }\n\n            .ctrl-btn {\n                padding: 12px;\n                border: 2px solid #444;\n                background: linear-gradient(to bottom, #3a3a3a, #2a2a2a);\n                color: #ccc;\n                cursor: pointer;\n                font-size: 14px;\n                font-weight: bold;\n                border-radius: 4px;\n                transition: all 0.2s;\n                text-transform: uppercase;\n                touch-action: manipulation;\n                -webkit-tap-highlight-color: transparent;\n            }\n\n            .ctrl-btn:hover {\n                background: linear-gradient(to bottom, #4a4a4a, #3a3a4a);\n                border-color: #666;\n            }\n\n            .ctrl-btn:active {\n                transform: translateY(1px);\n            }\n\n            .ctrl-btn.mute.active {\n                background: linear-gradient(to bottom, #ff0000, #aa0000);\n                border-color: #ff0000;\n                color: #fff;\n                box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);\n            }\n\n            .ctrl-btn.solo.active {\n                background: linear-gradient(to bottom, #ffaa00, #aa7700);\n                border-color: #ffaa00;\n                color: #fff;\n                box-shadow: 0 0 10px rgba(255, 170, 0, 0.5);\n            }\n        </style>\n\n        <div class=\"channel-header\">\n            <div class=\"channel-label\">LED</div>\n        </div>\n\n        <div class=\"value-display\">{{displayValue}} dB</div>\n\n        <div class=\"fader-section\">\n            <div class=\"vu-meter\">\n                <div class=\"vu-gradient\" ng-style=\"{'transform': 'translateY(' + (100 - audioLevel) + '%)'}\"></div>\n            </div>\n\n            <div class=\"fader-container\">\n                <div class=\"fader-scale\">\n                    <div class=\"scale-mark\" style=\"top: 0%\">+12</div>\n                    <div class=\"scale-mark\" style=\"top: 10%\">+6</div>\n                    <div class=\"scale-mark\" style=\"top: 25%\">0</div>\n                    <div class=\"scale-mark\" style=\"top: 40%\">-6</div>\n                    <div class=\"scale-mark\" style=\"top: 55%\">-12</div>\n                    <div class=\"scale-mark\" style=\"top: 70%\">-24</div>\n                    <div class=\"scale-mark\" style=\"top: 85%\">-36</div>\n                    <div class=\"scale-mark\" style=\"top: 100%\">-60</div>\n                </div>\n                <div class=\"fader-track\"></div>\n                <div class=\"fader-handle\" ng-style=\"{'top': faderPosition + 'px'}\">\n                </div>\n            </div>\n        </div>\n\n        <div class=\"control-buttons\">\n            <button class=\"ctrl-btn mute\" ng-class=\"{'active': muted}\" ng-click=\"toggleMute()\">\n                MUTE\n            </button>\n            <button class=\"ctrl-btn solo\" ng-class=\"{'active': solo}\" ng-click=\"toggleSolo()\">\n                SOLO\n            </button>\n        </div>\n    </div>\n\n  <script>\n    (function(scope) { console.log(\"Template Init: \" + scope.vm_strip);\n        // =================================================================\n        // HIER DIE ECHTE VOICEMEETER STRIP-NUMMER F\u00dcR JEDEN FADER ANPASSEN\n        // =================================================================\n        // F\u00fcr AIRMEDIA: scope.vm_strip = 6;\n        // F\u00fcr LED:      scope.vm_strip = 7;\n        // F\u00fcr TEAMS:    scope.vm_strip = 5;\n        //\n        scope.vm_strip = 7; // <-- DIESE ZEILE ANPASSEN!\n        // =================================================================\n\n        scope.displayValue = \"+12\";\n        scope.faderPosition = 0;\n        scope.audioLevel = 0;\n        scope.muted = false;\n        scope.solo = false;\n\n        var isDragging = false;\n        var minDb = -60;\n        var maxDb = 12;\n        var trackHeight = 300;\n        var handleHeight = 40;\n        var maxPosition = trackHeight - handleHeight;\n        var sendTimer = null; // Timer f\u00fcr die Drosselung\n\n        function dbToPosition(db) {\n            var normalized = (db - minDb) / (maxDb - minDb);\n            return (1 - normalized) * maxPosition;\n        }\n\n        function positionToDb(pos) {\n            var normalized = 1 - (pos / maxPosition);\n            return normalized * (maxDb - minDb) + minDb;\n        }\n\n        function updateDisplay(db) { console.log(\"updateDisplay:\", db, \"Strip:\", scope.vm_strip);\n            var currentDb = Math.round(db * 2) / 2;\n            scope.displayValue = currentDb >= 0 ? \"+\" + currentDb : currentDb.toString();\n            scope.faderPosition = dbToPosition(currentDb);\n        }\n\n        function startDrag(event) {\n            isDragging = true;\n            event.preventDefault();\n            document.body.style.cursor = 'grabbing';\n            var handle = event.currentTarget || event.target;\n            handle.classList.add('dragging');\n            var container = document.querySelector('#fader-' + scope.$id + ' .fader-container');\n            var rect = container.getBoundingClientRect();\n\n            function handleMove(e) {\n                if (!isDragging) return;\n                var clientY = (e.touches) ? e.touches[0].clientY : e.clientY;\n                var y = clientY - rect.top - (handleHeight / 2);\n                y = Math.max(0, Math.min(maxPosition, y));\n                \n                var currentDb = positionToDb(y);\n                updateDisplay(currentDb); // UI-Anzeige sofort aktualisieren\n                \n                // Digest-Cycle nur ansto\u00dfen, wenn n\u00f6tig, um Fehler zu vermeiden\n                if(!scope.$$phase) {\n                    scope.$apply();\n                }\n\n                // NACHRICHTEN DROSSELN\n                clearTimeout(sendTimer); // Alten Timer l\u00f6schen\n                sendTimer = setTimeout(function() {\n                    scope.send({\n                        payload: Math.round(currentDb * 2) / 2,\n                        topic: \"strip_gain_\" + scope.vm_strip\n                    });\n                }, 60); // Nachricht nur alle 60ms senden\n            }\n\n            function stopDrag(e) {\n                isDragging = false;\n                document.body.style.cursor = 'default';\n                handle.classList.remove('dragging');\n                document.removeEventListener('mousemove', handleMove);\n                document.removeEventListener('mouseup', stopDrag);\n                document.removeEventListener('touchmove', handleMove);\n                document.removeEventListener('touchend', stopDrag);\n                \n                // Sende den allerletzten Wert sofort beim Loslassen\n                clearTimeout(sendTimer);\n                var finalDb = positionToDb(scope.faderPosition);\n                scope.send({\n                    payload: Math.round(finalDb * 2) / 2,\n                    topic: \"strip_gain_\" + scope.vm_strip\n                });\n            }\n\n            document.addEventListener('mousemove', handleMove);\n            document.addEventListener('mouseup', stopDrag);\n            document.addEventListener('touchmove', handleMove, { passive: false });\n            document.addEventListener('touchend', stopDrag, { passive: false });\n        }\n\n        scope.$watch('$id', function() {\n            setTimeout(function() {\n                var handle = document.querySelector('#fader-' + scope.$id + ' .fader-handle');\n                if (handle) {\n                    handle.removeEventListener('mousedown', startDrag);\n                    handle.removeEventListener('touchstart', startDrag);\n                    handle.addEventListener('mousedown', startDrag, { passive: false });\n                    handle.addEventListener('touchstart', startDrag, { passive: false });\n                }\n            }, 100);\n        });\n\n        scope.toggleMute = function() {\n            scope.muted = !scope.muted;\n            scope.send({ payload: scope.muted, topic: \"strip_mute_\" + scope.vm_strip });\n        };\n        scope.toggleSolo = function() {\n            scope.solo = !scope.solo;\n            scope.send({ payload: scope.solo, topic: \"strip_solo_\" + scope.vm_strip });\n        };\n\n        scope.$watch('msg', function(msg) { console.log('UI Msg:', msg, 'Strip:', scope.vm_strip);\n            if (!msg || !msg.topic) return;\n            if (isDragging) return; // Updates w\u00e4hrend des Ziehens ignorieren\n\n            var parts = msg.topic.split('_');\n            if (parts.length < 3) return;\n\n            var type = parts[1];\n            var strip = parseInt(parts[2]);\n\n            console.log('Check:', strip, '===', scope.vm_strip); if (strip === scope.vm_strip) {\n                var changed = true;\n                if (type === 'gain')      { console.log('Gain Branch Entered', msg.payload); updateDisplay(msg.payload); }\n                else if (type === 'mute') { scope.muted = msg.payload; }\n                else if (type === 'solo') { scope.solo = msg.payload; }\n                else if (type === 'level'){ scope.audioLevel = Math.max(0, Math.min(100, (msg.payload + 60) * 1.66)); }\n                else { changed = false; }\n\n                if (changed && !scope.$$phase) {\n                    scope.$apply();\n                }\n            }\n        });\n        \n\n\n    })(scope);\n</script>\n</body>\n\n</html>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 1220,
+        "y": 840,
+        "wires": [
+            [
+                "df66073822b77050",
+                "be0b744f62892180"
+            ]
+        ]
+    },
+    {
+        "id": "b870552b058d1d16",
+        "type": "ui_template",
+        "z": "624ab42bda55e5d9",
+        "g": "a03be8365ffa1ffd",
+        "group": "072397c351e37a35",
+        "name": "TEAMS",
+        "order": 3,
+        "width": 4,
+        "height": 12,
+        "format": "<!DOCTYPE html>\n<html lang=\"de\">\n\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Pro Audio Fader</title>\n</head>\n\n<body>\n    <div class=\"pro-audio-fader\" id=\"fader-{{$id}}\">\n        <style>\n            .pro-audio-fader {\n                background: #1e1e1e;\n                border: 2px solid #333;\n                border-radius: 8px;\n                padding: 15px;\n                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);\n                touch-action: none;\n                -webkit-user-select: none;\n                -moz-user-select: none;\n                -ms-user-select: none;\n                user-select: none;\n            }\n\n            .channel-header {\n                display: flex;\n                justify-content: space-between;\n                align-items: center;\n                margin-bottom: 15px;\n            }\n\n            .channel-label {\n                color: #fff;\n                font-size: 18px;\n                font-weight: bold;\n            }\n\n            .value-display {\n                background: #000;\n                color: #0f0;\n                text-align: center;\n                padding: 8px;\n                font-family: 'Courier New', monospace;\n                font-size: 20px;\n                margin: 10px 0;\n                border: 2px solid #333;\n                border-radius: 4px;\n            }\n\n            .fader-section {\n                display: flex;\n                justify-content: center;\n                align-items: flex-start;\n                margin: 20px 0;\n                height: 300px;\n                position: relative;\n            }\n\n            .vu-meter {\n                width: 20px;\n                height: 100%;\n                background: #000;\n                border: 1px solid #444;\n                position: relative;\n                margin-right: 15px;\n                overflow: hidden;\n            }\n\n            .vu-gradient {\n                position: absolute;\n                bottom: 0;\n                width: 100%;\n                height: 100%;\n                background: linear-gradient(to top,\n                        #00ff00 0%,\n                        #00ff00 60%,\n                        #ffff00 80%,\n                        #ff8800 90%,\n                        #ff0000 100%);\n                transition: transform 0.1s;\n            }\n\n            .fader-container {\n                position: relative;\n                width: 60px;\n                height: 100%;\n                padding: 0 20px;\n                margin: 0 -20px;\n            }\n\n            .fader-track {\n                position: absolute;\n                left: 50%;\n                transform: translateX(-50%);\n                width: 10px;\n                height: 100%;\n                background: linear-gradient(to bottom, #222, #000);\n                box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);\n                border-radius: 5px;\n            }\n\n            .fader-scale {\n                position: absolute;\n                left: -25px;\n                height: 100%;\n                width: 20px;\n                font-size: 10px;\n                color: #888;\n            }\n\n            .scale-mark {\n                position: absolute;\n                right: 0;\n                transform: translateY(-50%);\n            }\n\n            .fader-handle {\n                position: absolute;\n                width: 50px;\n                height: 40px;\n                left: 50%;\n                transform: translateX(-50%);\n                background: linear-gradient(to bottom, #888, #444);\n                border: 2px solid #222;\n                border-radius: 4px;\n                cursor: grab;\n                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);\n                touch-action: none;\n            }\n\n            .fader-handle:active,\n            .fader-handle.dragging {\n                cursor: grabbing;\n                background: linear-gradient(to bottom, #999, #555);\n            }\n\n            .fader-handle::after {\n                content: '';\n                position: absolute;\n                top: 50%;\n                left: 50%;\n                transform: translate(-50%, -50%);\n                width: 70%;\n                height: 3px;\n                background: #aaa;\n                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);\n            }\n\n            .control-buttons {\n                display: grid;\n                grid-template-columns: 1fr 1fr;\n                gap: 10px;\n                margin-top: 20px;\n            }\n\n            .ctrl-btn {\n                padding: 12px;\n                border: 2px solid #444;\n                background: linear-gradient(to bottom, #3a3a3a, #2a2a2a);\n                color: #ccc;\n                cursor: pointer;\n                font-size: 14px;\n                font-weight: bold;\n                border-radius: 4px;\n                transition: all 0.2s;\n                text-transform: uppercase;\n                touch-action: manipulation;\n                -webkit-tap-highlight-color: transparent;\n            }\n\n            .ctrl-btn:hover {\n                background: linear-gradient(to bottom, #4a4a4a, #3a3a4a);\n                border-color: #666;\n            }\n\n            .ctrl-btn:active {\n                transform: translateY(1px);\n            }\n\n            .ctrl-btn.mute.active {\n                background: linear-gradient(to bottom, #ff0000, #aa0000);\n                border-color: #ff0000;\n                color: #fff;\n                box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);\n            }\n\n            .ctrl-btn.solo.active {\n                background: linear-gradient(to bottom, #ffaa00, #aa7700);\n                border-color: #ffaa00;\n                color: #fff;\n                box-shadow: 0 0 10px rgba(255, 170, 0, 0.5);\n            }\n        </style>\n\n        <div class=\"channel-header\">\n            <div class=\"channel-label\">TEAMS</div>\n        </div>\n\n        <div class=\"value-display\">{{displayValue}} dB</div>\n\n        <div class=\"fader-section\">\n            <div class=\"vu-meter\">\n                <div class=\"vu-gradient\" ng-style=\"{'transform': 'translateY(' + (100 - audioLevel) + '%)'}\"></div>\n            </div>\n\n            <div class=\"fader-container\">\n                <div class=\"fader-scale\">\n                    <div class=\"scale-mark\" style=\"top: 0%\">+12</div>\n                    <div class=\"scale-mark\" style=\"top: 10%\">+6</div>\n                    <div class=\"scale-mark\" style=\"top: 25%\">0</div>\n                    <div class=\"scale-mark\" style=\"top: 40%\">-6</div>\n                    <div class=\"scale-mark\" style=\"top: 55%\">-12</div>\n                    <div class=\"scale-mark\" style=\"top: 70%\">-24</div>\n                    <div class=\"scale-mark\" style=\"top: 85%\">-36</div>\n                    <div class=\"scale-mark\" style=\"top: 100%\">-60</div>\n                </div>\n                <div class=\"fader-track\"></div>\n                <div class=\"fader-handle\" ng-style=\"{'top': faderPosition + 'px'}\">\n                </div>\n            </div>\n        </div>\n\n        <div class=\"control-buttons\">\n            <button class=\"ctrl-btn mute\" ng-class=\"{'active': muted}\" ng-click=\"toggleMute()\">\n                MUTE\n            </button>\n            <button class=\"ctrl-btn solo\" ng-class=\"{'active': solo}\" ng-click=\"toggleSolo()\">\n                SOLO\n            </button>\n        </div>\n    </div>\n\n  <script>\n    (function(scope) { console.log(\"Template Init: \" + scope.vm_strip);\n        // =================================================================\n        // HIER DIE ECHTE VOICEMEETER STRIP-NUMMER F\u00dcR JEDEN FADER ANPASSEN\n        // =================================================================\n        // F\u00fcr AIRMEDIA: scope.vm_strip = 6;\n        // F\u00fcr LED:      scope.vm_strip = 7;\n        // F\u00fcr TEAMS:    scope.vm_strip = 5;\n        //\n        scope.vm_strip = 5; // <-- DIESE ZEILE ANPASSEN!\n        // =================================================================\n\n        scope.displayValue = \"+12\";\n        scope.faderPosition = 0;\n        scope.audioLevel = 0;\n        scope.muted = false;\n        scope.solo = false;\n\n        var isDragging = false;\n        var minDb = -60;\n        var maxDb = 12;\n        var trackHeight = 300;\n        var handleHeight = 40;\n        var maxPosition = trackHeight - handleHeight;\n        var sendTimer = null; // Timer f\u00fcr die Drosselung\n\n        function dbToPosition(db) {\n            var normalized = (db - minDb) / (maxDb - minDb);\n            return (1 - normalized) * maxPosition;\n        }\n\n        function positionToDb(pos) {\n            var normalized = 1 - (pos / maxPosition);\n            return normalized * (maxDb - minDb) + minDb;\n        }\n\n        function updateDisplay(db) { console.log(\"updateDisplay:\", db, \"Strip:\", scope.vm_strip);\n            var currentDb = Math.round(db * 2) / 2;\n            scope.displayValue = currentDb >= 0 ? \"+\" + currentDb : currentDb.toString();\n            scope.faderPosition = dbToPosition(currentDb);\n        }\n\n        function startDrag(event) {\n            isDragging = true;\n            event.preventDefault();\n            document.body.style.cursor = 'grabbing';\n            var handle = event.currentTarget || event.target;\n            handle.classList.add('dragging');\n            var container = document.querySelector('#fader-' + scope.$id + ' .fader-container');\n            var rect = container.getBoundingClientRect();\n\n            function handleMove(e) {\n                if (!isDragging) return;\n                var clientY = (e.touches) ? e.touches[0].clientY : e.clientY;\n                var y = clientY - rect.top - (handleHeight / 2);\n                y = Math.max(0, Math.min(maxPosition, y));\n                \n                var currentDb = positionToDb(y);\n                updateDisplay(currentDb); // UI-Anzeige sofort aktualisieren\n                \n                // Digest-Cycle nur ansto\u00dfen, wenn n\u00f6tig, um Fehler zu vermeiden\n                if(!scope.$$phase) {\n                    scope.$apply();\n                }\n\n                // NACHRICHTEN DROSSELN\n                clearTimeout(sendTimer); // Alten Timer l\u00f6schen\n                sendTimer = setTimeout(function() {\n                    scope.send({\n                        payload: Math.round(currentDb * 2) / 2,\n                        topic: \"strip_gain_\" + scope.vm_strip\n                    });\n                }, 60); // Nachricht nur alle 60ms senden\n            }\n\n            function stopDrag(e) {\n                isDragging = false;\n                document.body.style.cursor = 'default';\n                handle.classList.remove('dragging');\n                document.removeEventListener('mousemove', handleMove);\n                document.removeEventListener('mouseup', stopDrag);\n                document.removeEventListener('touchmove', handleMove);\n                document.removeEventListener('touchend', stopDrag);\n                \n                // Sende den allerletzten Wert sofort beim Loslassen\n                clearTimeout(sendTimer);\n                var finalDb = positionToDb(scope.faderPosition);\n                scope.send({\n                    payload: Math.round(finalDb * 2) / 2,\n                    topic: \"strip_gain_\" + scope.vm_strip\n                });\n            }\n\n            document.addEventListener('mousemove', handleMove);\n            document.addEventListener('mouseup', stopDrag);\n            document.addEventListener('touchmove', handleMove, { passive: false });\n            document.addEventListener('touchend', stopDrag, { passive: false });\n        }\n\n        scope.$watch('$id', function() {\n            setTimeout(function() {\n                var handle = document.querySelector('#fader-' + scope.$id + ' .fader-handle');\n                if (handle) {\n                    handle.removeEventListener('mousedown', startDrag);\n                    handle.removeEventListener('touchstart', startDrag);\n                    handle.addEventListener('mousedown', startDrag, { passive: false });\n                    handle.addEventListener('touchstart', startDrag, { passive: false });\n                }\n            }, 100);\n        });\n\n        scope.toggleMute = function() {\n            scope.muted = !scope.muted;\n            scope.send({ payload: scope.muted, topic: \"strip_mute_\" + scope.vm_strip });\n        };\n        scope.toggleSolo = function() {\n            scope.solo = !scope.solo;\n            scope.send({ payload: scope.solo, topic: \"strip_solo_\" + scope.vm_strip });\n        };\n\n        scope.$watch('msg', function(msg) { console.log('UI Msg:', msg, 'Strip:', scope.vm_strip);\n            if (!msg || !msg.topic) return;\n            if (isDragging) return; // Updates w\u00e4hrend des Ziehens ignorieren\n\n            var parts = msg.topic.split('_');\n            if (parts.length < 3) return;\n\n            var type = parts[1];\n            var strip = parseInt(parts[2]);\n\n            console.log('Check:', strip, '===', scope.vm_strip); if (strip === scope.vm_strip) {\n                var changed = true;\n                if (type === 'gain')      { console.log('Gain Branch Entered', msg.payload); updateDisplay(msg.payload); }\n                else if (type === 'mute') { scope.muted = msg.payload; }\n                else if (type === 'solo') { scope.solo = msg.payload; }\n                else if (type === 'level'){ scope.audioLevel = Math.max(0, Math.min(100, (msg.payload + 60) * 1.66)); }\n                else { changed = false; }\n\n                if (changed && !scope.$$phase) {\n                    scope.$apply();\n                }\n            }\n        });\n        \n\n\n    })(scope);\n</script>\n</body>\n\n</html>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 1180,
+        "y": 880,
+        "wires": [
+            [
+                "df66073822b77050",
+                "44e09f290863e83a"
+            ]
+        ]
+    },
+    {
+        "id": "df66073822b77050",
+        "type": "function",
+        "z": "624ab42bda55e5d9",
+        "g": "a03be8365ffa1ffd",
+        "name": "Route Fader Commands",
+        "func": "// Empf\u00e4ngt z.B. topic: \"strip_gain_5\"\nif (!msg.topic) return null;\n\n// Sonderfall: Sync-Anfrage\nif (msg.topic === 'requestSync') {\n    msg.payload = { command: 'sync' };\n    return msg;\n}\n\nconst parts = msg.topic.split('_'); // Ergibt ['strip', 'gain', '5']\nif (parts.length !== 3 || parts[0] !== 'strip') return null;\n\nconst commandType = parts[1]; // 'gain', 'mute', oder 'solo'\nconst stripIndex = parseInt(parts[2]);\n\nlet command = '';\nlet value = msg.payload;\n\nswitch (commandType) {\n    case 'gain':\n        command = 'setStripGain';\n        break;\n    case 'mute':\n        command = 'setStripMute';\n        value = msg.payload ? 1 : 0;\n        break;\n    case 'solo':\n        command = 'setStripSolo';\n        value = msg.payload ? 1 : 0;\n        break;\n    default:\n        return null; // Unbekannter Befehl\n}\n\nmsg.payload = {\n    command: command,\n    strip: stripIndex,\n    value: value\n};\n\nreturn msg;",
+        "outputs": 3,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1050,
+        "y": 980,
+        "wires": [
+            [
+                "a8c379ddfd7fdb1b"
+            ],
+            [
+                "a8c379ddfd7fdb1b"
+            ],
+            [
+                "a8c379ddfd7fdb1b"
+            ]
+        ]
+    },
+    {
+        "id": "a8c379ddfd7fdb1b",
+        "type": "json",
+        "z": "624ab42bda55e5d9",
+        "g": "a03be8365ffa1ffd",
+        "name": "To JSON String",
+        "property": "payload",
+        "action": "str",
+        "pretty": false,
+        "x": 1360,
+        "y": 960,
+        "wires": [
+            [
+                "c8176fcab8d61f99",
+                "64b6d7a20a434500"
+            ]
+        ]
+    },
+    {
+        "id": "64b6d7a20a434500",
+        "type": "debug",
+        "z": "624ab42bda55e5d9",
+        "g": "a03be8365ffa1ffd",
+        "name": "WS Send",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1550,
+        "y": 960,
+        "wires": []
+    },
+    {
+        "id": "931ddf622eff7a40",
+        "type": "function",
+        "z": "624ab42bda55e5d9",
+        "g": "a03be8365ffa1ffd",
+        "name": "Format Bus Gain",
+        "func": "// Map bus names to indices\nconst busMap = {\n    'busA1': 0, 'busA2': 1, 'busA3': 2, 'busA4': 3, 'busA5': 4,\n    'busB1': 5, 'busB2': 6, 'busB3': 7\n};\n\nconst busIndex = busMap[msg.topic];\nif (busIndex === undefined) return null;\n\nmsg.payload = {\n    command: 'setBusGain',\n    bus: busIndex,\n    value: msg.payload\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1310,
+        "y": 1020,
+        "wires": [
+            [
+                "a8c379ddfd7fdb1b"
+            ]
+        ]
+    },
+    {
+        "id": "7336acf2c219e125",
+        "type": "function",
+        "z": "624ab42bda55e5d9",
+        "g": "a03be8365ffa1ffd",
+        "name": "Process VM Response",
+        "func": "// Verarbeitet Nachrichten vom Python-Server (Universal Bridge v3)\nif (!msg.payload) return null;\n\nconst updates = [];\n\nfunction processParameter(param, value) {\n    //\n    // Match: Strip[0].Gain oder Bus[0].Mute\n    // Vereinfachtes Regex: Punkt statt Klammern um Escaping-Probleme zu vermeiden\n    const match = param.match(/(Strip|Bus).(\\d+)..(Gain|Mute|Solo)/);\n    if (!match) return;\n\n    const type = match[1];\n    const index = parseInt(match[2]);\n    const paramType = match[3];\n    \n    // Dieser Flow steuert prim\u00c3\u00a4r Strips\n    if (type !== 'Strip') return;\n\n    let topic = '';\n    let payload = value;\n\n    if (paramType === 'Gain') {\n        topic = `update_gain_${index}`;\n    } else if (paramType === 'Mute') {\n        topic = `update_mute_${index}`;\n        payload = (value === 1 || value === true);\n    } else if (paramType === 'Solo') {\n        topic = `update_solo_${index}`;\n        payload = (value === 1 || value === true);\n    }\n\n    if (topic) {\n        updates.push({ topic: topic, payload: payload });\n    }\n}\n\n// 1. Initial Sync (Welcome Message)\nif (msg.payload.type === 'welcome' && msg.payload.current_state) {\n    const state = msg.payload.current_state;\n    for (const [key, val] of Object.entries(state)) {\n        processParameter(key, val);\n    }\n}\n// 2. Laufende Updates\nelse if (msg.payload.type === 'parameter_update' && msg.payload.changes) {\n    msg.payload.changes.forEach(change => {\n        processParameter(change.parameter, change.value);\n    });\n}\n\n// Debugging: Falls keine Updates erkannt wurden, aber ein Event da war\nif (updates.length > 0) {\n    return [updates]; // Sende alle Updates als Sequenz an Ausgang 1\n}\n\nreturn null;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 800,
+        "y": 780,
+        "wires": [
+            [
+                "47eace0ad3edb016",
+                "d9b2bbe9a54a0fed"
+            ]
+        ]
+    },
+    {
+        "id": "2c0fd9f27544932e",
+        "type": "debug",
+        "z": "624ab42bda55e5d9",
+        "g": "a03be8365ffa1ffd",
+        "name": "debug 3 (from UI)",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1020,
+        "y": 1040,
+        "wires": []
+    },
+    {
+        "id": "10295b5aed9aa77d",
+        "type": "json",
+        "z": "624ab42bda55e5d9",
+        "g": "a03be8365ffa1ffd",
+        "name": "Parse Incoming JSON",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 550,
+        "y": 760,
+        "wires": [
+            [
+                "7336acf2c219e125",
+                "c78ffe1808a50c92"
+            ]
+        ]
+    },
+    {
+        "id": "c78ffe1808a50c92",
+        "type": "debug",
+        "z": "624ab42bda55e5d9",
+        "g": "a03be8365ffa1ffd",
+        "name": "debug 4 (from Parser)",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1040,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "f952ebdca99c9778",
+        "type": "debug",
+        "z": "624ab42bda55e5d9",
+        "g": "a03be8365ffa1ffd",
+        "name": "debug AIRMEDIA",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1470,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "be0b744f62892180",
+        "type": "debug",
+        "z": "624ab42bda55e5d9",
+        "g": "a03be8365ffa1ffd",
+        "name": "debug LED",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1490,
+        "y": 760,
+        "wires": []
+    },
+    {
+        "id": "44e09f290863e83a",
+        "type": "debug",
+        "z": "624ab42bda55e5d9",
+        "g": "a03be8365ffa1ffd",
+        "name": "debug TEAMS",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1420,
+        "y": 880,
+        "wires": []
+    },
+    {
+        "id": "722a63c3ec7f1d7b",
+        "type": "websocket-client",
+        "path": "ws://172.20.65.101:9014",
+        "tls": "",
+        "wholemsg": "false",
+        "hb": "0",
+        "subprotocol": "",
+        "headers": []
+    },
+    {
+        "id": "072397c351e37a35",
+        "type": "ui_group",
+        "name": "Voicemeeter",
+        "tab": "6cebe14286c44436",
+        "order": 2,
+        "disp": true,
+        "width": 12,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "6cebe14286c44436",
+        "type": "ui_tab",
+        "name": "Audio Control",
+        "icon": "volume_up",
+        "order": 2,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "sync_trigger_ui",
+        "type": "ui_ui_control",
+        "z": "624ab42bda55e5d9",
+        "name": "On Connect",
+        "events": "connect",
+        "x": 320,
+        "y": 600,
+        "wires": [
+            [
+                "sync_command_builder"
+            ]
+        ]
+    },
+    {
+        "id": "sync_command_builder",
+        "type": "function",
+        "z": "624ab42bda55e5d9",
+        "name": "Build Sync Cmd",
+        "func": "\n// Wait 1000ms to ensure UI is fully loaded before syncing\nsetTimeout(function() {\n    msg.payload = { command: 'sync' };\n    node.send(msg);\n}, 1000);\nreturn null;\n",
+        "outputs": 1,
+        "x": 500,
+        "y": 600,
+        "wires": [
+            [
+                "a8c379ddfd7fdb1b"
+            ]
+        ]
+    }
+]
