@@ -86,8 +86,16 @@ class VMBridge:
             return None
 
     def set_param(self, name, val):
+        # Feedback prevention: Ignore updates that are very close to the current cached value
+        current_val = self.cache.get(name)
+        if current_val is not None and abs(current_val - val) < 0.1:
+            # log(f"Ignored feedback/jitter for {name}: cur={current_val} new={val}")
+            return
+            
         log(f"SET {name} -> {val}")
         dll.VBVMR_SetParameterFloat(name.encode('ascii'), ctypes.c_float(val))
+        # Optimistically update cache to prevent immediate echo handling issues
+        self.cache[name] = val
 
     def get_all_states(self):
         """Sammelt den aktuellen Zustand aller überwachten Parameter."""
@@ -98,12 +106,15 @@ class VMBridge:
                 v = self.get_param(name)
                 if v is not None: 
                     state[name] = v
+                    self.cache[name] = v  # Update cache
                     # Log initial gain for debugging startup
                     if p == "Gain": log(f"Init State {name} = {v}")
             for p in ["Gain", "Mute"]:
                 name = f"Bus[{i}].{p}"
                 v = self.get_param(name)
-                if v is not None: state[name] = v
+                if v is not None: 
+                    state[name] = v
+                    self.cache[name] = v  # Update cache
         return state
 
     def get_levels(self):
